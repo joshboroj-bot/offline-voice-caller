@@ -1,0 +1,12 @@
+{
+  "name": "Offline Voice Caller",
+  "short_name": "Voice Caller",
+  "description": "Offline voice-controlled contact caller.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#111827",
+  "theme_color": "#111827",
+  "icons": []
+}
