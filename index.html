@@ -1,0 +1,2237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#0f172a" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="description" content="VoiceCall Offline — Your contacts. Your phone. No cloud required." />
+  <title>VoiceCall Offline</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --bg-card: #1e293b;
+      --bg-elevated: #334155;
+      --text: #f1f5f9;
+      --text-muted: #94a3b8;
+      --primary: #3b82f6;
+      --primary-hover: #2563eb;
+      --success: #22c55e;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --border: #334155;
+      --radius: 16px;
+      --radius-sm: 10px;
+      --shadow: 0 4px 20px rgba(0,0,0,0.35);
+      --safe-top: env(safe-area-inset-top, 0px);
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+      --nav-height: 64px;
+    }
+    [data-theme="light"] {
+      --bg: #f8fafc;
+      --bg-card: #ffffff;
+      --bg-elevated: #e2e8f0;
+      --text: #0f172a;
+      --text-muted: #64748b;
+      --border: #e2e8f0;
+      --shadow: 0 4px 20px rgba(0,0,0,0.08);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    html, body {
+      height: 100%;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      overflow: hidden;
+      line-height: 1.45;
+    }
+    #app {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      max-width: 480px;
+      margin: 0 auto;
+      position: relative;
+    }
+    /* Header */
+    .header {
+      padding: calc(12px + var(--safe-top)) 16px 12px;
+      background: var(--bg-card);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+      z-index: 10;
+    }
+    .header-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .logo {
+      font-size: 1.25rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+    .logo span { color: var(--primary); }
+    .subtitle {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+    .offline-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 0.7rem;
+      color: var(--success);
+      background: rgba(34,197,94,0.12);
+      padding: 4px 8px;
+      border-radius: 999px;
+      font-weight: 500;
+    }
+    .offline-badge::before {
+      content: "";
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--success);
+    }
+    /* Main content */
+    .main {
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
+      -webkit-overflow-scrolling: touch;
+      padding: 12px 16px;
+      padding-bottom: calc(var(--nav-height) + 16px + var(--safe-bottom));
+    }
+    /* Bottom nav */
+    .bottom-nav {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: calc(var(--nav-height) + var(--safe-bottom));
+      padding-bottom: var(--safe-bottom);
+      background: var(--bg-card);
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      z-index: 20;
+    }
+    .nav-btn {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 0.65rem;
+      font-weight: 500;
+      padding: 8px 4px;
+      cursor: pointer;
+      transition: color 0.15s;
+    }
+    .nav-btn.active { color: var(--primary); }
+    .nav-btn .icon { font-size: 1.35rem; line-height: 1; }
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 12px 18px;
+      border-radius: var(--radius-sm);
+      border: none;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+      min-height: 48px;
+    }
+    .btn:active { transform: scale(0.97); }
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-primary:hover, .btn-primary:focus { background: var(--primary-hover); }
+    .btn-secondary { background: var(--bg-elevated); color: var(--text); }
+    .btn-danger { background: var(--danger); color: #fff; }
+    .btn-success { background: var(--success); color: #fff; }
+    .btn-ghost { background: transparent; color: var(--text-muted); border: 1px solid var(--border); }
+    .btn-block { width: 100%; }
+    .btn-lg { padding: 16px 20px; font-size: 1.05rem; min-height: 56px; }
+    .btn-sm { padding: 8px 12px; font-size: 0.85rem; min-height: 36px; }
+    /* Search */
+    .search-wrap {
+      position: relative;
+      margin-bottom: 12px;
+    }
+    .search-input {
+      width: 100%;
+      padding: 14px 16px 14px 44px;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      background: var(--bg-card);
+      color: var(--text);
+      font-size: 1rem;
+      outline: none;
+    }
+    .search-input:focus { border-color: var(--primary); }
+    .search-icon {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 1.1rem;
+      opacity: 0.6;
+      pointer-events: none;
+    }
+    /* Contact card */
+    .contact-card {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 14px;
+      background: var(--bg-card);
+      border-radius: var(--radius);
+      margin-bottom: 8px;
+      border: 1px solid transparent;
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .contact-card:active, .contact-card:focus { border-color: var(--primary); background: var(--bg-elevated); }
+    .avatar {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: var(--primary);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 0.95rem;
+      flex-shrink: 0;
+      overflow: hidden;
+    }
+    .avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .contact-info { flex: 1; min-width: 0; }
+    .contact-name {
+      font-weight: 600;
+      font-size: 1rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .contact-phone {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+    .call-btn {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: rgba(34,197,94,0.15);
+      color: var(--success);
+      border: none;
+      font-size: 1.2rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .call-btn:active { background: rgba(34,197,94,0.3); }
+    /* Empty state */
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--text-muted);
+    }
+    .empty-state .big-icon { font-size: 3rem; margin-bottom: 12px; }
+    .empty-state h3 { color: var(--text); margin-bottom: 8px; font-size: 1.15rem; }
+    .empty-state p { font-size: 0.9rem; margin-bottom: 20px; }
+    /* Voice screen */
+    .voice-screen {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 60vh;
+      text-align: center;
+      padding: 20px;
+    }
+    .mic-btn {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      font-size: 3rem;
+      cursor: pointer;
+      box-shadow: 0 8px 32px rgba(59,130,246,0.4);
+      transition: transform 0.15s, box-shadow 0.15s;
+      margin-bottom: 20px;
+    }
+    .mic-btn:active { transform: scale(0.95); }
+    .mic-btn.listening {
+      background: var(--danger);
+      box-shadow: 0 8px 32px rgba(239,68,68,0.45);
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.06); }
+    }
+    .voice-status {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+    .voice-transcript {
+      font-size: 0.95rem;
+      color: var(--text-muted);
+      min-height: 1.4em;
+      max-width: 90%;
+      word-break: break-word;
+    }
+    /* Modal / overlay */
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.55);
+      z-index: 100;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s;
+    }
+    .overlay.open { opacity: 1; pointer-events: auto; }
+    .sheet {
+      background: var(--bg-card);
+      width: 100%;
+      max-width: 480px;
+      border-radius: 20px 20px 0 0;
+      padding: 20px 16px calc(20px + var(--safe-bottom));
+      max-height: 85vh;
+      overflow-y: auto;
+      transform: translateY(100%);
+      transition: transform 0.25s ease;
+    }
+    .overlay.open .sheet { transform: translateY(0); }
+    .sheet-handle {
+      width: 40px;
+      height: 4px;
+      background: var(--border);
+      border-radius: 2px;
+      margin: 0 auto 16px;
+    }
+    .sheet h2 { font-size: 1.2rem; margin-bottom: 16px; text-align: center; }
+    /* Form */
+    .form-group { margin-bottom: 14px; }
+    .form-group label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+    .form-group input, .form-group select, .form-group textarea {
+      width: 100%;
+      padding: 12px 14px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+      font-size: 1rem;
+      outline: none;
+    }
+    .form-group input:focus, .form-group select:focus { border-color: var(--primary); }
+    /* Settings list */
+    .settings-section { margin-bottom: 24px; }
+    .settings-section h3 {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--text-muted);
+      margin-bottom: 10px;
+      padding-left: 4px;
+    }
+    .settings-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 16px;
+      background: var(--bg-card);
+      border-radius: var(--radius-sm);
+      margin-bottom: 6px;
+      gap: 12px;
+    }
+    .settings-item label { font-weight: 500; flex: 1; }
+    .settings-item select, .settings-item input[type="text"] {
+      padding: 8px 10px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+      font-size: 0.9rem;
+      max-width: 140px;
+    }
+    .toggle {
+      position: relative;
+      width: 48px;
+      height: 28px;
+      background: var(--bg-elevated);
+      border-radius: 14px;
+      cursor: pointer;
+      transition: background 0.2s;
+      flex-shrink: 0;
+    }
+    .toggle.on { background: var(--primary); }
+    .toggle::after {
+      content: "";
+      position: absolute;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: #fff;
+      top: 3px;
+      left: 3px;
+      transition: transform 0.2s;
+    }
+    .toggle.on::after { transform: translateX(20px); }
+    /* Confirm call */
+    .confirm-call {
+      text-align: center;
+      padding: 10px 0;
+    }
+    .confirm-call .avatar {
+      width: 72px;
+      height: 72px;
+      font-size: 1.5rem;
+      margin: 0 auto 12px;
+    }
+    .confirm-call .name { font-size: 1.3rem; font-weight: 700; margin-bottom: 4px; }
+    .confirm-call .phone { color: var(--text-muted); margin-bottom: 24px; font-size: 1.05rem; }
+    .confirm-actions { display: flex; gap: 12px; }
+    .confirm-actions .btn { flex: 1; }
+    /* Match list */
+    .match-list { list-style: none; }
+    .match-list li {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      background: var(--bg);
+      border-radius: var(--radius-sm);
+      margin-bottom: 8px;
+      cursor: pointer;
+    }
+    .match-list li:active { background: var(--bg-elevated); }
+    /* Toast */
+    .toast {
+      position: fixed;
+      bottom: calc(var(--nav-height) + 20px + var(--safe-bottom));
+      left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      background: var(--bg-elevated);
+      color: var(--text);
+      padding: 12px 20px;
+      border-radius: 12px;
+      font-size: 0.9rem;
+      font-weight: 500;
+      box-shadow: var(--shadow);
+      z-index: 200;
+      opacity: 0;
+      transition: transform 0.25s, opacity 0.25s;
+      max-width: 90%;
+      text-align: center;
+      pointer-events: none;
+    }
+    .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+    /* Welcome */
+    .welcome-overlay {
+      position: fixed;
+      inset: 0;
+      background: var(--bg);
+      z-index: 300;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      text-align: center;
+      overflow-y: auto;
+    }
+    .welcome-overlay h1 { font-size: 1.6rem; margin-bottom: 8px; }
+    .welcome-overlay .tagline { color: var(--text-muted); margin-bottom: 28px; font-size: 0.95rem; }
+    .feature-list {
+      text-align: left;
+      margin: 0 auto 28px;
+      max-width: 280px;
+      list-style: none;
+    }
+    .feature-list li {
+      padding: 8px 0;
+      font-size: 0.95rem;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .feature-list li::before {
+      content: "✓";
+      color: var(--success);
+      font-weight: 700;
+    }
+    .welcome-actions { display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 300px; }
+    /* Detail view */
+    .detail-header {
+      text-align: center;
+      padding: 20px 0 16px;
+    }
+    .detail-header .avatar {
+      width: 80px;
+      height: 80px;
+      font-size: 1.8rem;
+      margin: 0 auto 12px;
+    }
+    .detail-header .name { font-size: 1.4rem; font-weight: 700; }
+    .detail-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 16px;
+      background: var(--bg-card);
+      border-radius: var(--radius-sm);
+      margin-bottom: 8px;
+    }
+    .detail-row .label { font-size: 0.75rem; color: var(--text-muted); }
+    .detail-row .value { font-size: 1rem; word-break: break-all; }
+    .detail-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 20px;
+    }
+    /* Help content */
+    .help-section { margin-bottom: 24px; }
+    .help-section h3 { font-size: 1.05rem; margin-bottom: 8px; color: var(--primary); }
+    .help-section p, .help-section ol, .help-section ul {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+    .help-section ol, .help-section ul { padding-left: 20px; }
+    .help-section li { margin-bottom: 4px; }
+    .help-note {
+      background: rgba(245,158,11,0.12);
+      border-left: 3px solid var(--warning);
+      padding: 12px 14px;
+      border-radius: 0 8px 8px 0;
+      font-size: 0.85rem;
+      color: var(--text);
+      margin-top: 12px;
+    }
+    /* Action bar on home */
+    .action-bar {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+    }
+    .action-bar .btn { flex: 1; min-width: 120px; font-size: 0.85rem; padding: 10px 12px; min-height: 44px; }
+    /* Hidden file inputs */
+    .hidden-input { position: absolute; width: 0; height: 0; opacity: 0; pointer-events: none; }
+    /* Screen visibility */
+    .screen { display: none; }
+    .screen.active { display: block; }
+    /* Misc */
+    .count-badge {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-bottom: 10px;
+    }
+    .back-btn {
+      background: none;
+      border: none;
+      color: var(--primary);
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      padding: 4px 0;
+      margin-bottom: 8px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    hr.sep { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <!-- Welcome (first run) -->
+    <div id="welcome" class="welcome-overlay" style="display:none;">
+      <h1>Welcome to <span style="color:var(--primary)">VoiceCall Offline</span></h1>
+      <p class="tagline">Your local contact and voice dialing assistant.</p>
+      <ul class="feature-list">
+        <li>Store contacts locally</li>
+        <li>Import VCF contacts</li>
+        <li>Search contacts</li>
+        <li>Use voice commands</li>
+        <li>Call through your normal phone dialer</li>
+        <li>No account required</li>
+      </ul>
+      <div class="welcome-actions">
+        <button class="btn btn-primary btn-lg btn-block" id="welcomeImport">📥 IMPORT CONTACTS</button>
+        <button class="btn btn-secondary btn-block" id="welcomeDemo">🧪 LOAD DEMO CONTACTS</button>
+        <button class="btn btn-ghost btn-block" id="welcomeContinue">CONTINUE</button>
+      </div>
+    </div>
+
+    <!-- Header -->
+    <header class="header">
+      <div class="header-top">
+        <div>
+          <div class="logo">Voice<span>Call</span> Offline</div>
+          <div class="subtitle">Your contacts. Your phone. No cloud required.</div>
+        </div>
+        <div class="offline-badge" id="offlineBadge">Offline ready</div>
+      </div>
+    </header>
+
+    <!-- Main -->
+    <main class="main" id="main">
+      <!-- HOME -->
+      <div class="screen active" id="screen-home">
+        <div class="search-wrap">
+          <span class="search-icon">🔍</span>
+          <input type="search" class="search-input" id="searchInput" placeholder="Search contacts..." autocomplete="off" aria-label="Search contacts" />
+        </div>
+        <div class="action-bar">
+          <button class="btn btn-primary" id="btnImport">📥 IMPORT</button>
+          <button class="btn btn-secondary" id="btnAddContact">+ ADD</button>
+          <button class="btn btn-secondary" id="btnVoiceQuick">🎙 VOICE</button>
+        </div>
+        <div class="count-badge" id="contactCount">0 contacts</div>
+        <div id="contactList"></div>
+        <div class="empty-state" id="emptyHome" style="display:none;">
+          <div class="big-icon">📇</div>
+          <h3>No contacts yet</h3>
+          <p>Import a VCF file or add contacts manually to get started.</p>
+          <button class="btn btn-primary" id="emptyImport">📥 IMPORT CONTACTS</button>
+        </div>
+      </div>
+
+      <!-- CONTACTS (same list, different entry) -->
+      <div class="screen" id="screen-contacts">
+        <div class="search-wrap">
+          <span class="search-icon">🔍</span>
+          <input type="search" class="search-input" id="searchInput2" placeholder="Search contacts..." autocomplete="off" aria-label="Search contacts" />
+        </div>
+        <div class="action-bar">
+          <button class="btn btn-primary" id="btnImport2">📥 IMPORT</button>
+          <button class="btn btn-secondary" id="btnExport">📤 EXPORT</button>
+          <button class="btn btn-secondary" id="btnAddContact2">+ ADD</button>
+        </div>
+        <div class="count-badge" id="contactCount2">0 contacts</div>
+        <div id="contactList2"></div>
+        <div class="empty-state" id="emptyContacts" style="display:none;">
+          <div class="big-icon">📇</div>
+          <h3>No contacts yet</h3>
+          <p>Import a VCF file or add contacts manually.</p>
+        </div>
+      </div>
+
+      <!-- VOICE -->
+      <div class="screen" id="screen-voice">
+        <div class="voice-screen">
+          <button class="mic-btn" id="micBtn" aria-label="Start voice command">🎙</button>
+          <div class="voice-status" id="voiceStatus">Tap to speak</div>
+          <div class="voice-transcript" id="voiceTranscript"></div>
+          <p style="margin-top:24px;font-size:0.85rem;color:var(--text-muted);max-width:280px;">
+            Say “Call John”, “Search Mum”, or “Show contacts”
+          </p>
+          <button class="btn btn-ghost btn-sm" id="btnRetryVoice" style="margin-top:16px;display:none;">🔄 Try again</button>
+        </div>
+      </div>
+
+      <!-- SETTINGS -->
+      <div class="screen" id="screen-settings">
+        <div class="settings-section">
+          <h3>Phone</h3>
+          <div class="settings-item">
+            <label for="settingCountry">Default country code</label>
+            <input type="text" id="settingCountry" value="+234" maxlength="6" aria-label="Default country code" />
+          </div>
+          <div class="settings-item">
+            <label>Confirm before calling</label>
+            <div class="toggle on" id="toggleConfirm" role="switch" aria-checked="true" tabindex="0"></div>
+          </div>
+        </div>
+        <div class="settings-section">
+          <h3>Voice</h3>
+          <div class="settings-item">
+            <label for="settingLang">Voice language</label>
+            <select id="settingLang" aria-label="Voice language">
+              <option value="en-NG">English (Nigeria)</option>
+              <option value="en-US">English (US)</option>
+              <option value="en-GB">English (UK)</option>
+              <option value="en">English</option>
+            </select>
+          </div>
+        </div>
+        <div class="settings-section">
+          <h3>Appearance</h3>
+          <div class="settings-item">
+            <label for="settingTheme">Theme</label>
+            <select id="settingTheme" aria-label="Theme">
+              <option value="system">System</option>
+              <option value="dark">Dark</option>
+              <option value="light">Light</option>
+            </select>
+          </div>
+        </div>
+        <div class="settings-section">
+          <h3>Data</h3>
+          <button class="btn btn-secondary btn-block" id="btnBackup" style="margin-bottom:8px;">💾 BACKUP CONTACTS</button>
+          <button class="btn btn-secondary btn-block" id="btnRestore" style="margin-bottom:8px;">📂 RESTORE BACKUP</button>
+          <button class="btn btn-secondary btn-block" id="btnExportSettings" style="margin-bottom:8px;">📤 EXPORT VCF</button>
+          <button class="btn btn-secondary btn-block" id="btnDemo" style="margin-bottom:8px;">🧪 LOAD DEMO CONTACTS</button>
+          <button class="btn btn-danger btn-block" id="btnClearAll">🗑 CLEAR ALL CONTACTS</button>
+        </div>
+        <div class="settings-section">
+          <h3>About</h3>
+          <button class="btn btn-ghost btn-block" id="btnHelp" style="margin-bottom:8px;">❓ Help</button>
+          <button class="btn btn-ghost btn-block" id="btnPrivacy">🔒 Privacy</button>
+        </div>
+      </div>
+
+      <!-- CONTACT DETAIL -->
+      <div class="screen" id="screen-detail">
+        <button class="back-btn" id="btnBackDetail">← Back</button>
+        <div class="detail-header">
+          <div class="avatar" id="detailAvatar">?</div>
+          <div class="name" id="detailName">—</div>
+        </div>
+        <div class="detail-row">
+          <div>
+            <div class="label">Phone</div>
+            <div class="value" id="detailPhone">—</div>
+          </div>
+        </div>
+        <div class="detail-row" id="detailEmailRow" style="display:none;">
+          <div>
+            <div class="label">Email</div>
+            <div class="value" id="detailEmail">—</div>
+          </div>
+        </div>
+        <div class="detail-row" id="detailOrgRow" style="display:none;">
+          <div>
+            <div class="label">Organization</div>
+            <div class="value" id="detailOrg">—</div>
+          </div>
+        </div>
+        <div class="detail-actions">
+          <button class="btn btn-success" id="detailCall">📞 Call</button>
+          <button class="btn btn-secondary" id="detailCopy">📋 Copy</button>
+          <button class="btn btn-secondary" id="detailEdit">✏️ Edit</button>
+          <button class="btn btn-danger" id="detailDelete">🗑 Delete</button>
+        </div>
+      </div>
+
+      <!-- HELP -->
+      <div class="screen" id="screen-help">
+        <button class="back-btn" id="btnBackHelp">← Back</button>
+        <h2 style="margin-bottom:16px;">Help</h2>
+        <div class="help-section">
+          <h3>How to import contacts</h3>
+          <ol>
+            <li>Export contacts from your phone as a <strong>.vcf</strong> file.</li>
+            <li>Open this app.</li>
+            <li>Tap <strong>Import Contacts</strong>.</li>
+            <li>Select the VCF file from storage.</li>
+          </ol>
+        </div>
+        <div class="help-section">
+          <h3>How to call with voice</h3>
+          <p style="margin-top:6px;">For older speakers and Nigerian/Ijaw-accented English, speak naturally. If a name is repeatedly misheard, use “learn [contact name]” so the app can remember the pronunciation locally.</p>
+          <ol>
+            <li>Tap the microphone.</li>
+            <li>Say “Call John” (or any contact name).</li>
+            <li>Select the correct contact if multiple match.</li>
+            <li>Tap <strong>Call Now</strong>.</li>
+            <li>Android opens the normal phone dialer.</li>
+          </ol>
+        </div>
+        <div class="help-section">
+          <h3>Important limitation</h3>
+          <p>This is an offline contact/dialing assistant.</p>
+          <p>The HTML application cannot create a cellular voice connection itself. Calls are handled by your Android phone’s normal telephone system, so normal SIM/network charges may apply.</p>
+          <div class="help-note">
+            Browser speech recognition availability varies. Some implementations may require internet access. Contact storage, search, import and export work fully offline.
+          </div>
+        </div>
+        <div class="help-section">
+          <h3>PWA / Home screen</h3>
+          <p>You can add this page to your Android home screen for a more app-like experience. A fully installable offline PWA normally also needs a <code>manifest.json</code> and service worker; this single-file version still works when opened directly as index.html.</p>
+        </div>
+        <div class="help-section">
+          <h3>Supported voice commands</h3>
+          <ul>
+            <li>“Call [name]” / “Dial [name]” / “Phone [name]”</li>
+            <li>“Search [name]” / “Find [name]”</li>
+            <li>“Show contacts” / “Open contacts”</li>
+            <li>“Clear search”</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- PRIVACY -->
+      <div class="screen" id="screen-privacy">
+        <button class="back-btn" id="btnBackPrivacy">← Back</button>
+        <h2 style="margin-bottom:16px;">Privacy</h2>
+        <div class="help-section">
+          <p>Your contacts are stored locally on this device using IndexedDB.</p>
+          <p>This app does not upload your contacts to a server.</p>
+          <p>No account is required. No cloud database is required.</p>
+          <p>Internet access is not required for contact storage, searching, manual dialing, importing or exporting contacts.</p>
+          <div class="help-note">
+            Voice recognition uses the browser’s Web Speech API. Depending on your browser and device, speech processing may require a network connection. Contact data itself is never sent by this app.
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Bottom nav -->
+    <nav class="bottom-nav" role="navigation" aria-label="Main">
+      <button class="nav-btn active" data-screen="home" aria-label="Home">
+        <span class="icon">🏠</span>
+        <span>Home</span>
+      </button>
+      <button class="nav-btn" data-screen="contacts" aria-label="Contacts">
+        <span class="icon">👥</span>
+        <span>Contacts</span>
+      </button>
+      <button class="nav-btn" data-screen="voice" aria-label="Voice">
+        <span class="icon">🎙</span>
+        <span>Voice</span>
+      </button>
+      <button class="nav-btn" data-screen="settings" aria-label="Settings">
+        <span class="icon">⚙</span>
+        <span>Settings</span>
+      </button>
+    </nav>
+  </div>
+
+  <!-- Confirm call overlay -->
+  <div class="overlay" id="confirmOverlay" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
+    <div class="sheet">
+      <div class="sheet-handle"></div>
+      <div class="confirm-call">
+        <div class="avatar" id="confirmAvatar">?</div>
+        <div class="name" id="confirmName">—</div>
+        <div class="phone" id="confirmPhone">—</div>
+        <p id="confirmTitle" style="font-weight:600;margin-bottom:16px;">CALL CONTACT?</p>
+        <div class="confirm-actions">
+          <button class="btn btn-success btn-lg" id="confirmCallBtn">📞 CALL NOW</button>
+          <button class="btn btn-ghost btn-lg" id="confirmCancelBtn">CANCEL</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Multiple matches overlay -->
+  <div class="overlay" id="matchesOverlay" role="dialog" aria-modal="true">
+    <div class="sheet">
+      <div class="sheet-handle"></div>
+      <h2>Multiple contacts found</h2>
+      <ul class="match-list" id="matchList"></ul>
+      <button class="btn btn-ghost btn-block" id="matchesCancel" style="margin-top:12px;">CANCEL</button>
+    </div>
+  </div>
+
+  <!-- Add / Edit contact overlay -->
+  <div class="overlay" id="formOverlay" role="dialog" aria-modal="true">
+    <div class="sheet">
+      <div class="sheet-handle"></div>
+      <h2 id="formTitle">Add Contact</h2>
+      <form id="contactForm">
+        <input type="hidden" id="formId" />
+        <div class="form-group">
+          <label for="formName">Name *</label>
+          <input type="text" id="formName" required autocomplete="name" />
+        </div>
+        <div class="form-group">
+          <label for="formPhone">Phone Number *</label>
+          <input type="tel" id="formPhone" required autocomplete="tel" />
+        </div>
+        <div class="form-group">
+          <label for="formEmail">Email</label>
+          <input type="email" id="formEmail" autocomplete="email" />
+        </div>
+        <div class="form-group">
+          <label for="formOrg">Organization</label>
+          <input type="text" id="formOrg" autocomplete="organization" />
+        </div>
+        <div style="display:flex;gap:10px;margin-top:8px;">
+          <button type="submit" class="btn btn-primary" style="flex:1;">Save</button>
+          <button type="button" class="btn btn-ghost" id="formCancel" style="flex:1;">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Hidden file inputs -->
+  <input type="file" id="vcfInput" class="hidden-input" accept=".vcf,.vcard,text/vcard,text/x-vcard" />
+  <input type="file" id="backupInput" class="hidden-input" accept=".json,application/json" />
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script>
+  (function () {
+    'use strict';
+
+    // ============================================================
+    // APP STATE & SETTINGS
+    // ============================================================
+    const DB_NAME = 'VoiceCallOfflineDB';
+    const DB_VERSION = 1;
+    const STORE = 'contacts';
+    const SETTINGS_KEY = 'vco_settings';
+    const FIRST_RUN_KEY = 'vco_first_run';
+
+    let db = null;
+    let allContacts = [];
+    let currentScreen = 'home';
+    let pendingCallContact = null;
+    let recognition = null;
+    let isListening = false;
+    let searchDebounce = null;
+    let currentDetailId = null;
+
+    const defaultSettings = {
+      countryCode: '+234',
+      confirmBeforeCall: true,
+      voiceLang: 'en-NG',
+      theme: 'system'
+    };
+    let settings = loadSettings();
+
+    // ============================================================
+    // UTILITIES
+    // ============================================================
+    function escapeHtml(str) {
+      if (str == null) return '';
+      const d = document.createElement('div');
+      d.textContent = String(str);
+      return d.innerHTML;
+    }
+
+    function initials(name) {
+      if (!name) return '?';
+      const parts = name.trim().split(/\s+/).filter(Boolean);
+      if (parts.length === 0) return '?';
+      if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    }
+
+    function normalizePhone(raw, countryCode) {
+      if (!raw) return '';
+      let s = String(raw).trim();
+      // Keep leading +
+      const hasPlus = s.startsWith('+');
+      s = s.replace(/[^\d+]/g, '');
+      // Remove extra + in middle
+      if (hasPlus) {
+        s = '+' + s.replace(/\+/g, '');
+      } else {
+        s = s.replace(/\+/g, '');
+      }
+      // If no + and starts with 0 and we have a country code, optionally expand
+      // We do not blindly rewrite; only strip formatting
+      return s;
+    }
+
+    function displayPhone(phone) {
+      if (!phone) return '';
+      return phone;
+    }
+
+    function toast(msg, ms) {
+      const el = document.getElementById('toast');
+      el.textContent = msg;
+      el.classList.add('show');
+      clearTimeout(toast._t);
+      toast._t = setTimeout(() => el.classList.remove('show'), ms || 2800);
+    }
+
+    function loadSettings() {
+      try {
+        const raw = localStorage.getItem(SETTINGS_KEY);
+        if (raw) return Object.assign({}, defaultSettings, JSON.parse(raw));
+      } catch (e) {}
+      return Object.assign({}, defaultSettings);
+    }
+
+    function saveSettings() {
+      try {
+        localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+      } catch (e) {}
+      applyTheme();
+    }
+
+    function applyTheme() {
+      const t = settings.theme;
+      if (t === 'light') {
+        document.documentElement.setAttribute('data-theme', 'light');
+      } else if (t === 'dark') {
+        document.documentElement.removeAttribute('data-theme');
+      } else {
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
+          document.documentElement.setAttribute('data-theme', 'light');
+        } else {
+          document.documentElement.removeAttribute('data-theme');
+        }
+      }
+    }
+
+    // ============================================================
+    // INDEXEDDB
+    // ============================================================
+    function openDB() {
+      return new Promise((resolve, reject) => {
+        if (!window.indexedDB) {
+          reject(new Error('IndexedDB is not available in this browser.'));
+          return;
+        }
+        const req = indexedDB.open(DB_NAME, DB_VERSION);
+        req.onerror = () => reject(req.error || new Error('Failed to open database'));
+        req.onsuccess = () => {
+          db = req.result;
+          resolve(db);
+        };
+        req.onupgradeneeded = (e) => {
+          const database = e.target.result;
+          if (!database.objectStoreNames.contains(STORE)) {
+            const store = database.createObjectStore(STORE, { keyPath: 'id', autoIncrement: true });
+            store.createIndex('name', 'name', { unique: false });
+            store.createIndex('normalizedPhone', 'normalizedPhone', { unique: false });
+            store.createIndex('normalizedName', 'normalizedName', { unique: false });
+          }
+        };
+      });
+    }
+
+    function tx(mode) {
+      return db.transaction(STORE, mode).objectStore(STORE);
+    }
+
+    function getAllContacts() {
+      return new Promise((resolve, reject) => {
+        const req = tx('readonly').getAll();
+        req.onsuccess = () => resolve(req.result || []);
+        req.onerror = () => reject(req.error);
+      });
+    }
+
+    function addContact(contact) {
+      return new Promise((resolve, reject) => {
+        const req = tx('readwrite').add(contact);
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+      });
+    }
+
+    function putContact(contact) {
+      return new Promise((resolve, reject) => {
+        const req = tx('readwrite').put(contact);
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+      });
+    }
+
+    function deleteContact(id) {
+      return new Promise((resolve, reject) => {
+        const req = tx('readwrite').delete(id);
+        req.onsuccess = () => resolve();
+        req.onerror = () => reject(req.error);
+      });
+    }
+
+    function clearAllContacts() {
+      return new Promise((resolve, reject) => {
+        const req = tx('readwrite').clear();
+        req.onsuccess = () => resolve();
+        req.onerror = () => reject(req.error);
+      });
+    }
+
+    async function refreshContacts() {
+      try {
+        allContacts = await getAllContacts();
+        allContacts.sort((a, b) => (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' }));
+        renderContactLists();
+      } catch (e) {
+        console.error(e);
+        toast('Could not load contacts');
+      }
+    }
+
+    // ============================================================
+    // VCARD PARSER
+    // ============================================================
+    function unfoldVCard(text) {
+      // RFC 6350 line unfolding
+      return text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').replace(/\n[ \t]/g, '');
+    }
+
+    function parseVCardLine(line) {
+      const colon = line.indexOf(':');
+      if (colon === -1) return null;
+      let meta = line.slice(0, colon);
+      const value = line.slice(colon + 1).trim();
+      const parts = meta.split(';');
+      const name = parts[0].toUpperCase().replace(/^ITEM\d+\./, '');
+      const params = {};
+      for (let i = 1; i < parts.length; i++) {
+        const eq = parts[i].indexOf('=');
+        if (eq !== -1) {
+          params[parts[i].slice(0, eq).toUpperCase()] = parts[i].slice(eq + 1).toUpperCase();
+        } else {
+          params[parts[i].toUpperCase()] = true;
+        }
+      }
+      return { name, params, value };
+    }
+
+    function parseVCF(text) {
+      const unfolded = unfoldVCard(text);
+      const blocks = unfolded.split(/BEGIN:VCARD/i).slice(1);
+      const contacts = [];
+      for (const block of blocks) {
+        const end = block.search(/END:VCARD/i);
+        const body = end === -1 ? block : block.slice(0, end);
+        const lines = body.split('\n').map(l => l.trim()).filter(Boolean);
+        let fn = '';
+        let n = '';
+        const tels = [];
+        let email = '';
+        let org = '';
+        let photo = '';
+        for (const line of lines) {
+          const parsed = parseVCardLine(line);
+          if (!parsed) continue;
+          if (parsed.name === 'FN') fn = parsed.value;
+          else if (parsed.name === 'N' && !fn) {
+            // N:Last;First;Middle;Prefix;Suffix
+            const nparts = parsed.value.split(';');
+            fn = [nparts[1], nparts[0]].filter(Boolean).join(' ').trim() || parsed.value.replace(/;/g, ' ').trim();
+          } else if (parsed.name === 'TEL') {
+            const num = parsed.value.replace(/^tel:/i, '').trim();
+            if (num) tels.push(num);
+          } else if (parsed.name === 'EMAIL' && !email) {
+            email = parsed.value;
+          } else if (parsed.name === 'ORG' && !org) {
+            org = parsed.value.split(';')[0];
+          } else if (parsed.name === 'PHOTO' && !photo) {
+            if (parsed.params.ENCODING === 'B' || parsed.params.ENCODING === 'BASE64') {
+              const type = (parsed.params.TYPE || 'JPEG').toLowerCase();
+              photo = 'data:image/' + type + ';base64,' + parsed.value.replace(/\s/g, '');
+            } else if (parsed.value.startsWith('data:')) {
+              photo = parsed.value;
+            }
+          }
+        }
+        if (!fn && !tels.length) continue;
+        if (!fn) fn = tels[0] || 'Unknown';
+        // One contact per phone number if multiple, or single with primary
+        if (tels.length === 0) {
+          contacts.push({ name: fn, phone: '', email, organization: org, photo });
+        } else if (tels.length === 1) {
+          contacts.push({ name: fn, phone: tels[0], email, organization: org, photo });
+        } else {
+          // Store each number as separate contact entry with same name (user can merge later)
+          // Or keep first as primary and note others — for simplicity keep one card with primary phone
+          contacts.push({ name: fn, phone: tels[0], email, organization: org, photo, altPhones: tels.slice(1) });
+        }
+      }
+      return contacts;
+    }
+
+    function isDuplicate(existing, name, phone) {
+      const nName = (name || '').toLowerCase().replace(/\s+/g, ' ').trim();
+      const nPhone = normalizePhone(phone, settings.countryCode);
+      return existing.some(c => {
+        const cName = (c.normalizedName || (c.name || '').toLowerCase().replace(/\s+/g, ' ').trim());
+        const cPhone = c.normalizedPhone || normalizePhone(c.phone, settings.countryCode);
+        if (nPhone && cPhone && nPhone === cPhone) return true;
+        if (nName && cName && nName === cName && nPhone && cPhone && nPhone === cPhone) return true;
+        if (nName && cName && nName === cName && (!nPhone || !cPhone)) return true;
+        return false;
+      });
+    }
+
+    async function importVCFFile(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = async () => {
+          try {
+            const text = reader.result;
+            if (!text || typeof text !== 'string') {
+              reject(new Error('Invalid or empty file'));
+              return;
+            }
+            if (!/BEGIN:VCARD/i.test(text)) {
+              reject(new Error('Not a valid VCF / vCard file'));
+              return;
+            }
+            const parsed = parseVCF(text);
+            if (!parsed.length) {
+              reject(new Error('No contacts found in file'));
+              return;
+            }
+            let imported = 0;
+            let skipped = 0;
+            const now = Date.now();
+            for (const p of parsed) {
+              if (isDuplicate(allContacts, p.name, p.phone)) {
+                skipped++;
+                continue;
+              }
+              const contact = {
+                name: (p.name || 'Unknown').trim(),
+                phone: (p.phone || '').trim(),
+                normalizedPhone: normalizePhone(p.phone, settings.countryCode),
+                normalizedName: (p.name || '').toLowerCase().replace(/\s+/g, ' ').trim(),
+                email: (p.email || '').trim(),
+                organization: (p.organization || '').trim(),
+                photo: p.photo || '',
+                createdAt: now,
+                updatedAt: now
+              };
+              await addContact(contact);
+              imported++;
+              allContacts.push(contact); // temporary for dup check within same file
+            }
+            await refreshContacts();
+            resolve({ imported, skipped, total: parsed.length });
+          } catch (err) {
+            reject(err);
+          }
+        };
+        reader.onerror = () => reject(new Error('Failed to read file'));
+        reader.readAsText(file);
+      });
+    }
+
+    // ============================================================
+    // EXPORT / BACKUP
+    // ============================================================
+    function exportVCF() {
+      if (!allContacts.length) {
+        toast('No contacts to export');
+        return;
+      }
+      let vcf = '';
+      for (const c of allContacts) {
+        vcf += 'BEGIN:VCARD\r\nVERSION:3.0\r\n';
+        vcf += 'FN:' + (c.name || '').replace(/\n/g, ' ') + '\r\n';
+        if (c.phone) vcf += 'TEL:' + c.phone + '\r\n';
+        if (c.email) vcf += 'EMAIL:' + c.email + '\r\n';
+        if (c.organization) vcf += 'ORG:' + c.organization + '\r\n';
+        vcf += 'END:VCARD\r\n';
+      }
+      downloadBlob(vcf, 'voicecall-contacts.vcf', 'text/vcard');
+      toast('Exported ' + allContacts.length + ' contacts');
+    }
+
+    function backupContacts() {
+      if (!allContacts.length) {
+        toast('No contacts to backup');
+        return;
+      }
+      const payload = {
+        version: 1,
+        exportedAt: new Date().toISOString(),
+        contacts: allContacts
+      };
+      const date = new Date().toISOString().slice(0, 10);
+      downloadBlob(JSON.stringify(payload, null, 2), 'voicecall-backup-' + date + '.json', 'application/json');
+      toast('Backup saved');
+    }
+
+    async function restoreBackup(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = async () => {
+          try {
+            const data = JSON.parse(reader.result);
+            const list = data.contacts || data;
+            if (!Array.isArray(list)) throw new Error('Invalid backup format');
+            let added = 0;
+            const now = Date.now();
+            for (const item of list) {
+              if (!item.name && !item.phone) continue;
+              if (isDuplicate(allContacts, item.name, item.phone)) continue;
+              const contact = {
+                name: (item.name || 'Unknown').trim(),
+                phone: (item.phone || '').trim(),
+                normalizedPhone: normalizePhone(item.phone, settings.countryCode),
+                normalizedName: (item.name || '').toLowerCase().replace(/\s+/g, ' ').trim(),
+                email: (item.email || '').trim(),
+                organization: (item.organization || '').trim(),
+                photo: item.photo || '',
+                createdAt: item.createdAt || now,
+                updatedAt: now
+              };
+              await addContact(contact);
+              allContacts.push(contact);
+              added++;
+            }
+            await refreshContacts();
+            resolve(added);
+          } catch (e) {
+            reject(e);
+          }
+        };
+        reader.onerror = () => reject(new Error('Failed to read backup'));
+        reader.readAsText(file);
+      });
+    }
+
+    function downloadBlob(content, filename, mime) {
+      const blob = new Blob([content], { type: mime });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 2000);
+    }
+
+    // ============================================================
+    // SEARCH & MATCHING
+    // ============================================================
+    function searchContacts(query) {
+      const q = (query || '').trim().toLowerCase();
+      if (!q) return allContacts.slice();
+      return allContacts.filter(c => {
+        const name = (c.name || '').toLowerCase();
+        const phone = (c.phone || '') + ' ' + (c.normalizedPhone || '');
+        const org = (c.organization || '').toLowerCase();
+        const email = (c.email || '').toLowerCase();
+        return name.includes(q) || phone.includes(q) || org.includes(q) || email.includes(q);
+      });
+    }
+
+    // ============================================================
+    // GRANDMA / NIGERIAN ACCENT-FRIENDLY VOICE LEARNING
+    // ============================================================
+    // Browser SpeechRecognition does not provide a true offline Ijaw
+    // acoustic model. Instead, this layer makes contact matching tolerant
+    // of accent/pronunciation differences and learns the way the speaker's
+    // phone recognizes each contact name.
+    const VOICE_ALIAS_KEY = 'voice_contact_aliases_v1';
+
+    function getVoiceAliases() {
+      try { return JSON.parse(localStorage.getItem(VOICE_ALIAS_KEY) || '{}'); }
+      catch (e) { return {}; }
+    }
+
+    function saveVoiceAlias(contact, spoken) {
+      if (!contact || !contact.id || !spoken) return;
+      const phrase = normalizeNameText(spoken);
+      if (!phrase || phrase.length < 2) return;
+
+      const aliases = getVoiceAliases();
+      if (!aliases[contact.id]) aliases[contact.id] = [];
+      if (!aliases[contact.id].includes(phrase)) {
+        aliases[contact.id].push(phrase);
+        // Keep learning bounded.
+        aliases[contact.id] = aliases[contact.id].slice(-12);
+        localStorage.setItem(VOICE_ALIAS_KEY, JSON.stringify(aliases));
+      }
+    }
+
+    // Accent-tolerant phonetic key. This is intentionally conservative:
+    // it smooths common vowel/consonant differences without changing the
+    // actual stored contact name.
+    function accentPhonetic(value) {
+      let s = normalizeNameText(value);
+      s = s
+        .replace(/ph/g, 'f')
+        .replace(/ck/g, 'k')
+        .replace(/qu/g, 'kw')
+        .replace(/wh/g, 'w')
+        .replace(/wr/g, 'r')
+        .replace(/th/g, 't')
+        .replace(/dh/g, 'd')
+        .replace(/sh/g, 's')
+        .replace(/ch/g, 'c')
+        .replace(/j/g, 'g')
+        .replace(/z/g, 's')
+        .replace(/[aeiou]+/g, 'a')
+        .replace(/(.)\1+/g, '$1')
+        .replace(/[^a-z0-9]/g, '');
+      return s;
+    }
+
+    function pronunciationScore(spoken, candidate) {
+      const a = accentPhonetic(spoken);
+      const b = accentPhonetic(candidate);
+      if (!a || !b) return 0;
+      if (a === b) return 100;
+      return Math.round(similarity(a, b) * 100);
+    }
+
+    const RELATION_MAP = {
+      mum: ['mum', 'mom', 'mother', 'mama', 'mummy'],
+      mom: ['mum', 'mom', 'mother', 'mama', 'mummy'],
+      mother: ['mum', 'mom', 'mother', 'mama', 'mummy'],
+      dad: ['dad', 'father', 'daddy', 'papa'],
+      father: ['dad', 'father', 'daddy', 'papa'],
+      bro: ['bro', 'brother'],
+      brother: ['bro', 'brother'],
+      sis: ['sis', 'sister'],
+      sister: ['sis', 'sister']
+    };
+
+    function expandQuery(name) {
+      const key = name.toLowerCase().trim();
+      if (RELATION_MAP[key]) return RELATION_MAP[key];
+      return [key];
+    }
+
+    // Pronunciation-friendly contact matching. Speech recognition can
+    // mis-hear names, so compare normalized words, initials and edit distance.
+    function normalizeNameText(value) {
+      return String(value || '')
+        .toLowerCase()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9\s]/g, ' ')
+        .replace(/\b(mr|mrs|ms|miss|dr|prof)\b/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+    }
+
+    function levenshtein(a, b) {
+      a = normalizeNameText(a); b = normalizeNameText(b);
+      if (a === b) return 0;
+      if (!a) return b.length;
+      if (!b) return a.length;
+      if (a.length > b.length) [a, b] = [b, a];
+      let prev = Array.from({length: a.length + 1}, (_, i) => i);
+      for (let j = 1; j <= b.length; j++) {
+        const cur = [j];
+        for (let i = 1; i <= a.length; i++) {
+          cur[i] = Math.min(
+            cur[i - 1] + 1,
+            prev[i] + 1,
+            prev[i - 1] + (a[i - 1] === b[j - 1] ? 0 : 1)
+          );
+        }
+        prev = cur;
+      }
+      return prev[a.length];
+    }
+
+    function similarity(a, b) {
+      a = normalizeNameText(a); b = normalizeNameText(b);
+      if (!a || !b) return 0;
+      if (a === b) return 1;
+      return 1 - (levenshtein(a, b) / Math.max(a.length, b.length));
+    }
+
+    function nameScore(spokenName, contactName) {
+      const q = normalizeNameText(spokenName);
+      const n = normalizeNameText(contactName);
+      if (!q || !n) return 0;
+      if (q === n) return 100;
+
+      const qTokens = q.split(' ');
+      const nTokens = n.split(' ');
+      let score = similarity(q, n) * 72;
+
+      // Compare each spoken word to the closest contact-name word.
+      const tokenScores = qTokens.map(qt => Math.max(...nTokens.map(nt => similarity(qt, nt))));
+      const avg = tokenScores.reduce((a,b) => a+b, 0) / tokenScores.length;
+      score = Math.max(score, avg * 88);
+
+      // Strong partial/word-prefix matches.
+      if (n.includes(q)) score = Math.max(score, 86);
+      if (q.includes(n)) score = Math.max(score, 82);
+      for (const qt of qTokens) {
+        if (qt.length >= 2 && nTokens.some(nt => nt.startsWith(qt))) score = Math.max(score, 78);
+      }
+
+      // Initials: "j k" can match "John Kennedy".
+      if (qTokens.length >= 2 && qTokens.length <= nTokens.length) {
+        const initials = nTokens.map(t => t[0]).join('');
+        if (qTokens.map(t => t[0]).join('') === initials.slice(0, qTokens.length)) score = Math.max(score, 84);
+      }
+      return Math.round(score);
+    }
+
+    function fuzzyMatchContacts(spokenName) {
+      const variants = expandQuery(spokenName);
+      const aliases = getVoiceAliases();
+      const scores = [];
+
+      for (const c of allContacts) {
+        let best = 0;
+
+        // Normal contact-name matching.
+        for (const v of variants) {
+          best = Math.max(best, nameScore(v, c.name));
+          best = Math.max(best, pronunciationScore(v, c.name));
+        }
+
+        // Learned pronunciation aliases from this particular speaker/device.
+        const learned = aliases[c.id] || [];
+        for (const alias of learned) {
+          for (const v of variants) {
+            best = Math.max(best, nameScore(v, alias) + 8);
+            best = Math.max(best, pronunciationScore(v, alias) + 8);
+          }
+        }
+
+        if (best >= 52) scores.push({contact: c, score: Math.min(100, best)});
+      }
+
+      scores.sort((a, b) => b.score - a.score);
+      if (!scores.length) return [];
+
+      const best = scores[0].score;
+      if (best < 64) return [];
+
+      // A stronger margin reduces the chance that an accent-related
+      // pronunciation accidentally selects the wrong person.
+      const margin = best >= 90 ? 10 : best >= 80 ? 8 : 5;
+      return scores
+        .filter(s => s.score >= best - margin)
+        .slice(0, 5)
+        .map(s => s.contact);
+    }
+
+
+    // ============================================================
+    // VOICE RECOGNITION & COMMANDS
+    // ============================================================
+    function initSpeech() {
+      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SR) return null;
+      const r = new SR();
+      r.continuous = false;
+      r.interimResults = false;
+      r.maxAlternatives = 3;
+      r.lang = settings.voiceLang || 'en-NG';
+      return r;
+    }
+
+    function setVoiceUI(state, transcript) {
+      const btn = document.getElementById('micBtn');
+      const status = document.getElementById('voiceStatus');
+      const trans = document.getElementById('voiceTranscript');
+      const retry = document.getElementById('btnRetryVoice');
+      btn.classList.toggle('listening', state === 'listening');
+      retry.style.display = (state === 'nomatch' || state === 'error') ? 'inline-flex' : 'none';
+      const map = {
+        idle: 'Tap to speak',
+        listening: 'Listening...',
+        processing: 'Understanding...',
+        found: 'Contact found',
+        multiple: 'Choose a contact',
+        nomatch: "I couldn't find that contact.",
+        error: 'Something went wrong'
+      };
+      status.textContent = map[state] || state;
+      trans.textContent = transcript || '';
+    }
+
+    // Request microphone permission as soon as the app opens.
+    // The microphone stream is immediately stopped after permission is granted;
+    // this only establishes permission for later voice commands.
+    async function requestMicrophonePermission() {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        console.warn('Microphone permission API is not available in this browser.');
+        return false;
+      }
+
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        stream.getTracks().forEach(track => track.stop());
+        return true;
+      } catch (error) {
+        console.warn('Microphone permission was not granted:', error);
+        return false;
+      }
+    }
+
+    function startListening() {
+      if (isListening) {
+        stopListening();
+        return;
+      }
+      recognition = initSpeech();
+      if (!recognition) {
+        setVoiceUI('error', 'Voice recognition is not supported by this browser. Please use a compatible Android browser.');
+        toast('Speech recognition not available');
+        return;
+      }
+      recognition.lang = settings.voiceLang || 'en-NG';
+      recognition.onstart = () => {
+        isListening = true;
+        setVoiceUI('listening');
+      };
+      recognition.onresult = (event) => {
+        const result = event.results[0];
+        const alternatives = Array.from(result || [])
+          .map(a => (a.transcript || '').trim())
+          .filter(Boolean);
+        const text = alternatives[0] || '';
+        setVoiceUI('processing', '"' + text + '"');
+
+        // Try every speech-recognition alternative. This is especially useful
+        // when Android hears a contact name slightly differently.
+        const callMatch = alternatives.find(t => /^(?:call|dial|phone|ring)\s+/i.test(t));
+        if (callMatch) {
+          const spokenName = callMatch.replace(/^(?:call|dial|phone|ring)\s+/i, '').replace(/[?.!]+$/, '').trim();
+          const candidates = [];
+          for (const alt of alternatives) {
+            const n = alt.replace(/^(?:call|dial|phone|ring)\s+/i, '').replace(/[?.!]+$/, '').trim();
+            if (!n) continue;
+            fuzzyMatchContacts(n).forEach(c => { if (!candidates.includes(c)) candidates.push(c); });
+          }
+          if (candidates.length) {
+            setVoiceUI(candidates.length === 1 ? 'found' : 'multiple', candidates.length === 1 ? candidates[0].name : candidates.length + ' matches');
+            if (candidates.length === 1) initiateCall(candidates[0]);
+            else showMatches(candidates);
+            return;
+          }
+          handleVoiceCommand(callMatch);
+          return;
+        }
+        handleVoiceCommand(text);
+      };
+      recognition.onerror = (event) => {
+        isListening = false;
+        let msg = 'Recognition error';
+        if (event.error === 'not-allowed') msg = 'Microphone permission denied';
+        else if (event.error === 'no-speech') msg = 'No speech detected';
+        else if (event.error === 'network') msg = 'Network error (some browsers need internet for speech)';
+        setVoiceUI('error', msg);
+      };
+      recognition.onend = () => {
+        isListening = false;
+        if (document.getElementById('voiceStatus').textContent === 'Listening...') {
+          setVoiceUI('idle');
+        }
+      };
+      try {
+        recognition.start();
+      } catch (e) {
+        isListening = false;
+        setVoiceUI('error', 'Could not start microphone');
+      }
+    }
+
+    function stopListening() {
+      if (recognition) {
+        try { recognition.stop(); } catch (e) {}
+      }
+      isListening = false;
+      setVoiceUI('idle');
+    }
+
+    function handleVoiceCommand(text) {
+      const lower = text.toLowerCase().trim();
+      // Clear search
+      if (/^(clear search|clear|reset search)$/.test(lower)) {
+        document.getElementById('searchInput').value = '';
+        document.getElementById('searchInput2').value = '';
+        renderContactLists();
+        setVoiceUI('idle', 'Search cleared');
+        navigate('home');
+        return;
+      }
+      // Show contacts
+      if (/^(show contacts|open contacts|contacts|show all)$/.test(lower)) {
+        setVoiceUI('idle', 'Showing contacts');
+        navigate('contacts');
+        return;
+      }
+      // Teach pronunciation: "teach John" / "learn John".
+      // The next recognized phrase is stored as a local pronunciation alias.
+      let m = lower.match(/^(?:teach|learn|remember)\s+(.+)$/);
+      if (m) {
+        const target = m[1].replace(/[?.!]+$/, '').trim();
+        const teachMatches = fuzzyMatchContacts(target);
+        if (teachMatches.length === 1) {
+          setVoiceUI('found', 'Say the name again for ' + teachMatches[0].name);
+          saveVoiceAlias(teachMatches[0], target);
+          toast('Pronunciation learned for ' + teachMatches[0].name);
+        } else if (teachMatches.length > 1) {
+          showMatches(teachMatches);
+        } else {
+          setVoiceUI('nomatch', 'I could not find ' + target);
+        }
+        return;
+      }
+
+      // Call / Dial / Phone
+      m = lower.match(/^(?:call|dial|phone|ring)\s+(.+)$/);
+      if (m) {
+        const name = m[1].replace(/[?.!]+$/, '').trim();
+        processCallIntent(name, text);
+        return;
+      }
+      // Search / Find / Show name
+      m = lower.match(/^(?:search|find|show|look up|lookup)\s+(.+)$/);
+      if (m) {
+        const name = m[1].replace(/[?.!]+$/, '').trim();
+        const matches = fuzzyMatchContacts(name);
+        if (matches.length === 0) {
+          // also try plain search
+          const plain = searchContacts(name);
+          if (plain.length === 0) {
+            setVoiceUI('nomatch', '"' + text + '"');
+            return;
+          }
+          document.getElementById('searchInput').value = name;
+          document.getElementById('searchInput2').value = name;
+          renderContactLists(plain);
+          setVoiceUI('found', plain.length + ' result(s)');
+          navigate('home');
+          return;
+        }
+        document.getElementById('searchInput').value = name;
+        renderContactLists(matches);
+        setVoiceUI('found', matches.length + ' result(s)');
+        navigate('home');
+        return;
+      }
+      // Fallback: treat whole phrase as name to call
+      processCallIntent(lower, text);
+    }
+
+    function processCallIntent(name, originalText) {
+      const matches = fuzzyMatchContacts(name);
+      if (matches.length === 0) {
+        setVoiceUI('nomatch', '"' + (originalText || name) + '"');
+        return;
+      }
+      if (matches.length === 1) {
+        // Remember how this speaker's phone recognized the name. This makes
+        // repeated calls increasingly accurate for the same grandmother.
+        saveVoiceAlias(matches[0], name);
+        setVoiceUI('found', matches[0].name);
+        initiateCall(matches[0]);
+        return;
+      }
+      setVoiceUI('multiple', matches.length + ' matches');
+      showMatches(matches);
+    }
+
+    // ============================================================
+    // CALL HANDLER
+    // ============================================================
+    function initiateCall(contact) {
+      if (!contact || !contact.phone) {
+        toast('No phone number for this contact');
+        return;
+      }
+      if (settings.confirmBeforeCall) {
+        pendingCallContact = contact;
+        showConfirm(contact);
+      } else {
+        dial(contact.phone);
+      }
+    }
+
+    function showConfirm(contact) {
+      document.getElementById('confirmAvatar').textContent = initials(contact.name);
+      document.getElementById('confirmName').textContent = contact.name || 'Unknown';
+      document.getElementById('confirmPhone').textContent = displayPhone(contact.phone);
+      document.getElementById('confirmOverlay').classList.add('open');
+    }
+
+    function hideConfirm() {
+      document.getElementById('confirmOverlay').classList.remove('open');
+      pendingCallContact = null;
+    }
+
+    function dial(phone) {
+      const num = String(phone).replace(/\s/g, '');
+      if (!num) {
+        toast('Invalid phone number');
+        return;
+      }
+      // Hand off to native dialer
+      window.location.href = 'tel:' + num;
+    }
+
+    function showMatches(list) {
+      const ul = document.getElementById('matchList');
+      ul.innerHTML = '';
+      list.forEach((c, i) => {
+        const li = document.createElement('li');
+        li.innerHTML =
+          '<div class="avatar">' + escapeHtml(initials(c.name)) + '</div>' +
+          '<div class="contact-info"><div class="contact-name">' + escapeHtml(c.name) + '</div>' +
+          '<div class="contact-phone">' + escapeHtml(displayPhone(c.phone)) + '</div></div>';
+        li.addEventListener('click', () => {
+          document.getElementById('matchesOverlay').classList.remove('open');
+          initiateCall(c);
+        });
+        ul.appendChild(li);
+      });
+      document.getElementById('matchesOverlay').classList.add('open');
+    }
+
+    // ============================================================
+    // UI RENDERING
+    // ============================================================
+    function renderContactLists(filtered) {
+      const list = filtered != null ? filtered : allContacts;
+      const containers = [
+        { el: document.getElementById('contactList'), empty: document.getElementById('emptyHome'), count: document.getElementById('contactCount') },
+        { el: document.getElementById('contactList2'), empty: document.getElementById('emptyContacts'), count: document.getElementById('contactCount2') }
+      ];
+      containers.forEach(({ el, empty, count }) => {
+        if (!el) return;
+        count.textContent = (filtered != null ? list.length + ' shown · ' : '') + allContacts.length + ' contact' + (allContacts.length !== 1 ? 's' : '');
+        if (list.length === 0) {
+          el.innerHTML = '';
+          if (empty) empty.style.display = allContacts.length === 0 ? 'block' : 'none';
+          if (allContacts.length > 0 && filtered != null) {
+            el.innerHTML = '<div class="empty-state"><p>No matches for your search.</p></div>';
+          }
+          return;
+        }
+        if (empty) empty.style.display = 'none';
+        const frag = document.createDocumentFragment();
+        // Limit DOM for performance with huge lists — virtual-ish: show first 500 when searching all
+        const maxShow = filtered != null ? 300 : 500;
+        const slice = list.slice(0, maxShow);
+        slice.forEach(c => {
+          const card = document.createElement('div');
+          card.className = 'contact-card';
+          card.setAttribute('role', 'button');
+          card.tabIndex = 0;
+          card.dataset.id = c.id;
+          const avContent = c.photo
+            ? '<img src="' + escapeHtml(c.photo) + '" alt="" />'
+            : escapeHtml(initials(c.name));
+          card.innerHTML =
+            '<div class="avatar">' + avContent + '</div>' +
+            '<div class="contact-info">' +
+            '<div class="contact-name">' + escapeHtml(c.name) + '</div>' +
+            '<div class="contact-phone">' + escapeHtml(displayPhone(c.phone)) + '</div>' +
+            '</div>' +
+            '<button class="call-btn" aria-label="Call ' + escapeHtml(c.name) + '" data-call-id="' + c.id + '">📞</button>';
+          card.addEventListener('click', (e) => {
+            if (e.target.closest('.call-btn')) return;
+            openDetail(c.id);
+          });
+          card.querySelector('.call-btn').addEventListener('click', (e) => {
+            e.stopPropagation();
+            initiateCall(c);
+          });
+          frag.appendChild(card);
+        });
+        el.innerHTML = '';
+        el.appendChild(frag);
+        if (list.length > maxShow) {
+          const more = document.createElement('p');
+          more.style.cssText = 'text-align:center;color:var(--text-muted);font-size:0.85rem;padding:12px;';
+          more.textContent = 'Showing first ' + maxShow + ' of ' + list.length + '. Refine your search.';
+          el.appendChild(more);
+        }
+      });
+    }
+
+    function openDetail(id) {
+      const c = allContacts.find(x => x.id === id);
+      if (!c) return;
+      currentDetailId = id;
+      document.getElementById('detailAvatar').textContent = initials(c.name);
+      document.getElementById('detailName').textContent = c.name || '—';
+      document.getElementById('detailPhone').textContent = displayPhone(c.phone) || '—';
+      const emailRow = document.getElementById('detailEmailRow');
+      const orgRow = document.getElementById('detailOrgRow');
+      if (c.email) {
+        document.getElementById('detailEmail').textContent = c.email;
+        emailRow.style.display = 'flex';
+      } else emailRow.style.display = 'none';
+      if (c.organization) {
+        document.getElementById('detailOrg').textContent = c.organization;
+        orgRow.style.display = 'flex';
+      } else orgRow.style.display = 'none';
+      navigate('detail', true);
+    }
+
+    // ============================================================
+    // NAVIGATION
+    // ============================================================
+    function navigate(screen, skipNavHighlight) {
+      currentScreen = screen;
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+      const el = document.getElementById('screen-' + screen);
+      if (el) el.classList.add('active');
+      if (!skipNavHighlight) {
+        document.querySelectorAll('.nav-btn').forEach(b => {
+          b.classList.toggle('active', b.dataset.screen === screen);
+        });
+      }
+      // Reset voice UI when leaving
+      if (screen !== 'voice' && isListening) stopListening();
+      window.scrollTo(0, 0);
+      document.getElementById('main').scrollTop = 0;
+    }
+
+    // ============================================================
+    // DEMO DATA
+    // ============================================================
+    async function loadDemoContacts() {
+      const demos = [
+        { name: 'John Doe', phone: '+2348012345678' },
+        { name: 'Jane Smith', phone: '+2348023456789' },
+        { name: 'David Emmanuel', phone: '+2348034567890' },
+        { name: 'Mum', phone: '+2348045678901' }
+      ];
+      let added = 0;
+      const now = Date.now();
+      for (const d of demos) {
+        if (isDuplicate(allContacts, d.name, d.phone)) continue;
+        await addContact({
+          name: d.name,
+          phone: d.phone,
+          normalizedPhone: normalizePhone(d.phone, settings.countryCode),
+          normalizedName: d.name.toLowerCase(),
+          email: '',
+          organization: '',
+          photo: '',
+          createdAt: now,
+          updatedAt: now
+        });
+        added++;
+      }
+      await refreshContacts();
+      toast(added ? ('Loaded ' + added + ' demo contact(s)') : 'Demo contacts already present');
+    }
+
+    // ============================================================
+    // EVENT LISTENERS
+    // ============================================================
+    function bindEvents() {
+      // Nav
+      document.querySelectorAll('.nav-btn').forEach(btn => {
+        btn.addEventListener('click', () => navigate(btn.dataset.screen));
+      });
+
+      // Search
+      const onSearch = (e) => {
+        clearTimeout(searchDebounce);
+        searchDebounce = setTimeout(() => {
+          const q = e.target.value;
+          document.getElementById('searchInput').value = q;
+          document.getElementById('searchInput2').value = q;
+          renderContactLists(q ? searchContacts(q) : null);
+        }, 180);
+      };
+      document.getElementById('searchInput').addEventListener('input', onSearch);
+      document.getElementById('searchInput2').addEventListener('input', onSearch);
+
+      // Import
+      const triggerImport = () => document.getElementById('vcfInput').click();
+      document.getElementById('btnImport').addEventListener('click', triggerImport);
+      document.getElementById('btnImport2').addEventListener('click', triggerImport);
+      document.getElementById('emptyImport').addEventListener('click', triggerImport);
+      document.getElementById('welcomeImport').addEventListener('click', () => {
+        document.getElementById('welcome').style.display = 'none';
+        localStorage.setItem(FIRST_RUN_KEY, '1');
+        triggerImport();
+      });
+
+      document.getElementById('vcfInput').addEventListener('change', async (e) => {
+        const file = e.target.files && e.target.files[0];
+        e.target.value = '';
+        if (!file) return;
+        try {
+          toast('Importing...');
+          const result = await importVCFFile(file);
+          toast(result.imported + ' contact(s) imported' + (result.skipped ? (' · ' + result.skipped + ' skipped (duplicates)') : ''));
+        } catch (err) {
+          toast(err.message || 'Import failed');
+        }
+      });
+
+      // Add contact
+      const openAddForm = () => {
+        document.getElementById('formTitle').textContent = 'Add Contact';
+        document.getElementById('formId').value = '';
+        document.getElementById('formName').value = '';
+        document.getElementById('formPhone').value = '';
+        document.getElementById('formEmail').value = '';
+        document.getElementById('formOrg').value = '';
+        document.getElementById('formOverlay').classList.add('open');
+        setTimeout(() => document.getElementById('formName').focus(), 300);
+      };
+      document.getElementById('btnAddContact').addEventListener('click', openAddForm);
+      document.getElementById('btnAddContact2').addEventListener('click', openAddForm);
+      document.getElementById('formCancel').addEventListener('click', () => {
+        document.getElementById('formOverlay').classList.remove('open');
+      });
+      document.getElementById('contactForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const id = document.getElementById('formId').value;
+        const name = document.getElementById('formName').value.trim();
+        const phone = document.getElementById('formPhone').value.trim();
+        const email = document.getElementById('formEmail').value.trim();
+        const org = document.getElementById('formOrg').value.trim();
+        if (!name || !phone) {
+          toast('Name and phone are required');
+          return;
+        }
+        const now = Date.now();
+        try {
+          if (id) {
+            const existing = allContacts.find(c => String(c.id) === String(id));
+            if (!existing) throw new Error('Contact not found');
+            existing.name = name;
+            existing.phone = phone;
+            existing.normalizedPhone = normalizePhone(phone, settings.countryCode);
+            existing.normalizedName = name.toLowerCase().replace(/\s+/g, ' ').trim();
+            existing.email = email;
+            existing.organization = org;
+            existing.updatedAt = now;
+            await putContact(existing);
+            toast('Contact updated');
+          } else {
+            if (isDuplicate(allContacts, name, phone)) {
+              toast('A similar contact already exists');
+              return;
+            }
+            await addContact({
+              name, phone,
+              normalizedPhone: normalizePhone(phone, settings.countryCode),
+              normalizedName: name.toLowerCase().replace(/\s+/g, ' ').trim(),
+              email, organization: org, photo: '',
+              createdAt: now, updatedAt: now
+            });
+            toast('Contact added');
+          }
+          document.getElementById('formOverlay').classList.remove('open');
+          await refreshContacts();
+          if (id) openDetail(Number(id) || id);
+        } catch (err) {
+          toast(err.message || 'Save failed');
+        }
+      });
+
+      // Export
+      document.getElementById('btnExport').addEventListener('click', exportVCF);
+      document.getElementById('btnExportSettings').addEventListener('click', exportVCF);
+
+      // Backup / restore
+      document.getElementById('btnBackup').addEventListener('click', backupContacts);
+      document.getElementById('btnRestore').addEventListener('click', () => document.getElementById('backupInput').click());
+      document.getElementById('backupInput').addEventListener('change', async (e) => {
+        const file = e.target.files && e.target.files[0];
+        e.target.value = '';
+        if (!file) return;
+        try {
+          const n = await restoreBackup(file);
+          toast(n + ' contact(s) restored');
+        } catch (err) {
+          toast(err.message || 'Restore failed');
+        }
+      });
+
+      // Demo
+      document.getElementById('btnDemo').addEventListener('click', loadDemoContacts);
+      document.getElementById('welcomeDemo').addEventListener('click', async () => {
+        document.getElementById('welcome').style.display = 'none';
+        localStorage.setItem(FIRST_RUN_KEY, '1');
+        await loadDemoContacts();
+      });
+      document.getElementById('welcomeContinue').addEventListener('click', () => {
+        document.getElementById('welcome').style.display = 'none';
+        localStorage.setItem(FIRST_RUN_KEY, '1');
+      });
+
+      // Clear all
+      document.getElementById('btnClearAll').addEventListener('click', async () => {
+        if (!allContacts.length) { toast('No contacts'); return; }
+        if (!confirm('Delete ALL contacts permanently? This cannot be undone.')) return;
+        try {
+          await clearAllContacts();
+          await refreshContacts();
+          toast('All contacts cleared');
+        } catch (e) {
+          toast('Failed to clear');
+        }
+      });
+
+      // Voice
+      document.getElementById('micBtn').addEventListener('click', startListening);
+      document.getElementById('btnVoiceQuick').addEventListener('click', () => {
+        navigate('voice');
+        setTimeout(startListening, 300);
+      });
+      document.getElementById('btnRetryVoice').addEventListener('click', startListening);
+
+      // Confirm call
+      document.getElementById('confirmCallBtn').addEventListener('click', () => {
+        if (pendingCallContact) dial(pendingCallContact.phone);
+        hideConfirm();
+      });
+      document.getElementById('confirmCancelBtn').addEventListener('click', hideConfirm);
+      document.getElementById('confirmOverlay').addEventListener('click', (e) => {
+        if (e.target === document.getElementById('confirmOverlay')) hideConfirm();
+      });
+      document.getElementById('matchesCancel').addEventListener('click', () => {
+        document.getElementById('matchesOverlay').classList.remove('open');
+      });
+      document.getElementById('matchesOverlay').addEventListener('click', (e) => {
+        if (e.target === document.getElementById('matchesOverlay')) {
+          document.getElementById('matchesOverlay').classList.remove('open');
+        }
+      });
+
+      // Detail actions
+      document.getElementById('btnBackDetail').addEventListener('click', () => navigate('home'));
+      document.getElementById('detailCall').addEventListener('click', () => {
+        const c = allContacts.find(x => x.id === currentDetailId);
+        if (c) initiateCall(c);
+      });
+      document.getElementById('detailCopy').addEventListener('click', async () => {
+        const c = allContacts.find(x => x.id === currentDetailId);
+        if (!c || !c.phone) return;
+        try {
+          await navigator.clipboard.writeText(c.phone);
+          toast('Number copied');
+        } catch (e) {
+          toast('Could not copy');
+        }
+      });
+      document.getElementById('detailEdit').addEventListener('click', () => {
+        const c = allContacts.find(x => x.id === currentDetailId);
+        if (!c) return;
+        document.getElementById('formTitle').textContent = 'Edit Contact';
+        document.getElementById('formId').value = c.id;
+        document.getElementById('formName').value = c.name || '';
+        document.getElementById('formPhone').value = c.phone || '';
+        document.getElementById('formEmail').value = c.email || '';
+        document.getElementById('formOrg').value = c.organization || '';
+        document.getElementById('formOverlay').classList.add('open');
+      });
+      document.getElementById('detailDelete').addEventListener('click', async () => {
+        if (!confirm('Delete this contact?')) return;
+        try {
+          await deleteContact(currentDetailId);
+          await refreshContacts();
+          toast('Contact deleted');
+          navigate('home');
+        } catch (e) {
+          toast('Delete failed');
+        }
+      });
+
+      // Settings
+      document.getElementById('settingCountry').value = settings.countryCode;
+      document.getElementById('settingCountry').addEventListener('change', (e) => {
+        settings.countryCode = e.target.value.trim() || '+234';
+        saveSettings();
+      });
+      document.getElementById('settingLang').value = settings.voiceLang;
+      document.getElementById('settingLang').addEventListener('change', (e) => {
+        settings.voiceLang = e.target.value;
+        saveSettings();
+      });
+      document.getElementById('settingTheme').value = settings.theme;
+      document.getElementById('settingTheme').addEventListener('change', (e) => {
+        settings.theme = e.target.value;
+        saveSettings();
+      });
+      const toggle = document.getElementById('toggleConfirm');
+      if (!settings.confirmBeforeCall) toggle.classList.remove('on');
+      toggle.setAttribute('aria-checked', settings.confirmBeforeCall ? 'true' : 'false');
+      toggle.addEventListener('click', () => {
+        settings.confirmBeforeCall = !settings.confirmBeforeCall;
+        toggle.classList.toggle('on', settings.confirmBeforeCall);
+        toggle.setAttribute('aria-checked', settings.confirmBeforeCall ? 'true' : 'false');
+        saveSettings();
+      });
+      toggle.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle.click(); }
+      });
+
+      // Help / Privacy
+      document.getElementById('btnHelp').addEventListener('click', () => navigate('help', true));
+      document.getElementById('btnPrivacy').addEventListener('click', () => navigate('privacy', true));
+      document.getElementById('btnBackHelp').addEventListener('click', () => navigate('settings'));
+      document.getElementById('btnBackPrivacy').addEventListener('click', () => navigate('settings'));
+
+      // Online/offline indicator
+      function updateOnlineStatus() {
+        const badge = document.getElementById('offlineBadge');
+        if (navigator.onLine) {
+          badge.textContent = 'Offline ready';
+          badge.style.color = '';
+        } else {
+          badge.textContent = 'Offline mode';
+        }
+      }
+      window.addEventListener('online', updateOnlineStatus);
+      window.addEventListener('offline', updateOnlineStatus);
+      updateOnlineStatus();
+
+      // Theme media change
+      if (window.matchMedia) {
+        window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', () => {
+          if (settings.theme === 'system') applyTheme();
+        });
+      }
+    }
+
+    // ============================================================
+    // INIT
+    // ============================================================
+    async function init() {
+      // Ask for microphone permission immediately when the app opens.
+      // This does not keep the microphone active; it only requests permission.
+      requestMicrophonePermission();
+
+      applyTheme();
+      bindEvents();
+      try {
+        await openDB();
+        await refreshContacts();
+      } catch (e) {
+        console.error(e);
+        toast('Storage unavailable: ' + (e.message || 'IndexedDB error'));
+      }
+      // First run
+      if (!localStorage.getItem(FIRST_RUN_KEY)) {
+        document.getElementById('welcome').style.display = 'flex';
+      }
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', init);
+    } else {
+      init();
+    }
+  })();
+  </script>
+</body>
+</html>
