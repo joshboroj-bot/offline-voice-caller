@@ -1,11 +1,16 @@
-# Offline Voice Caller PWA
+VoiceCall Offline PWA V3
 
-Files:
-- index.html — main app
-- manifest.json — Android PWA installation metadata
-- service-worker.js — offline cache
+This version adds:
+- Nigerian English speech recognition default (en-NG)
+- accent/pronunciation-tolerant contact matching
+- local pronunciation learning for each contact
+- "teach [contact name]" / "learn [contact name]" commands
+- local-only storage of learned pronunciation aliases
 
-IMPORTANT:
-The service worker and browser microphone APIs require the app to be opened from a secure origin (HTTPS) for normal browser/PWA operation. Install the PWA once while online, grant microphone permission, and then the cached app can run offline.
+Important:
+Web Speech Recognition in Android browsers does not expose a true offline Ijaw
+acoustic model. The app therefore improves Ijaw-accented English handling at the
+contact-matching layer rather than claiming native Ijaw speech recognition.
 
-The app's phone calls still use the Android phone/cellular network and therefore use airtime.
+Install/update the PWA from HTTPS once, then the app shell and local contact data
+can work offline. Normal phone calls still use the cellular network/airtime.
