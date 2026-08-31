@@ -1,11 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#111827">
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <meta name="theme-color" content="#0f172a" />
@@ -767,6 +762,7 @@
         </div>
         <div class="help-section">
           <h3>How to call with voice</h3>
+          <p style="margin-top:6px;">For older speakers and Nigerian/Ijaw-accented English, speak naturally. If a name is repeatedly misheard, use “learn [contact name]” so the app can remember the pronunciation locally.</p>
           <ol>
             <li>Tap the microphone.</li>
             <li>Say “Call John” (or any contact name).</li>
@@ -1336,6 +1332,66 @@
       });
     }
 
+    // ============================================================
+    // GRANDMA / NIGERIAN ACCENT-FRIENDLY VOICE LEARNING
+    // ============================================================
+    // Browser SpeechRecognition does not provide a true offline Ijaw
+    // acoustic model. Instead, this layer makes contact matching tolerant
+    // of accent/pronunciation differences and learns the way the speaker's
+    // phone recognizes each contact name.
+    const VOICE_ALIAS_KEY = 'voice_contact_aliases_v1';
+
+    function getVoiceAliases() {
+      try { return JSON.parse(localStorage.getItem(VOICE_ALIAS_KEY) || '{}'); }
+      catch (e) { return {}; }
+    }
+
+    function saveVoiceAlias(contact, spoken) {
+      if (!contact || !contact.id || !spoken) return;
+      const phrase = normalizeNameText(spoken);
+      if (!phrase || phrase.length < 2) return;
+
+      const aliases = getVoiceAliases();
+      if (!aliases[contact.id]) aliases[contact.id] = [];
+      if (!aliases[contact.id].includes(phrase)) {
+        aliases[contact.id].push(phrase);
+        // Keep learning bounded.
+        aliases[contact.id] = aliases[contact.id].slice(-12);
+        localStorage.setItem(VOICE_ALIAS_KEY, JSON.stringify(aliases));
+      }
+    }
+
+    // Accent-tolerant phonetic key. This is intentionally conservative:
+    // it smooths common vowel/consonant differences without changing the
+    // actual stored contact name.
+    function accentPhonetic(value) {
+      let s = normalizeNameText(value);
+      s = s
+        .replace(/ph/g, 'f')
+        .replace(/ck/g, 'k')
+        .replace(/qu/g, 'kw')
+        .replace(/wh/g, 'w')
+        .replace(/wr/g, 'r')
+        .replace(/th/g, 't')
+        .replace(/dh/g, 'd')
+        .replace(/sh/g, 's')
+        .replace(/ch/g, 'c')
+        .replace(/j/g, 'g')
+        .replace(/z/g, 's')
+        .replace(/[aeiou]+/g, 'a')
+        .replace(/(.)\1+/g, '$1')
+        .replace(/[^a-z0-9]/g, '');
+      return s;
+    }
+
+    function pronunciationScore(spoken, candidate) {
+      const a = accentPhonetic(spoken);
+      const b = accentPhonetic(candidate);
+      if (!a || !b) return 0;
+      if (a === b) return 100;
+      return Math.round(similarity(a, b) * 100);
+    }
+
     const RELATION_MAP = {
       mum: ['mum', 'mom', 'mother', 'mama', 'mummy'],
       mom: ['mum', 'mom', 'mother', 'mama', 'mummy'],
@@ -1354,28 +1410,117 @@
       return [key];
     }
 
+    // Pronunciation-friendly contact matching. Speech recognition can
+    // mis-hear names, so compare normalized words, initials and edit distance.
+    function normalizeNameText(value) {
+      return String(value || '')
+        .toLowerCase()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9\s]/g, ' ')
+        .replace(/\b(mr|mrs|ms|miss|dr|prof)\b/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+    }
+
+    function levenshtein(a, b) {
+      a = normalizeNameText(a); b = normalizeNameText(b);
+      if (a === b) return 0;
+      if (!a) return b.length;
+      if (!b) return a.length;
+      if (a.length > b.length) [a, b] = [b, a];
+      let prev = Array.from({length: a.length + 1}, (_, i) => i);
+      for (let j = 1; j <= b.length; j++) {
+        const cur = [j];
+        for (let i = 1; i <= a.length; i++) {
+          cur[i] = Math.min(
+            cur[i - 1] + 1,
+            prev[i] + 1,
+            prev[i - 1] + (a[i - 1] === b[j - 1] ? 0 : 1)
+          );
+        }
+        prev = cur;
+      }
+      return prev[a.length];
+    }
+
+    function similarity(a, b) {
+      a = normalizeNameText(a); b = normalizeNameText(b);
+      if (!a || !b) return 0;
+      if (a === b) return 1;
+      return 1 - (levenshtein(a, b) / Math.max(a.length, b.length));
+    }
+
+    function nameScore(spokenName, contactName) {
+      const q = normalizeNameText(spokenName);
+      const n = normalizeNameText(contactName);
+      if (!q || !n) return 0;
+      if (q === n) return 100;
+
+      const qTokens = q.split(' ');
+      const nTokens = n.split(' ');
+      let score = similarity(q, n) * 72;
+
+      // Compare each spoken word to the closest contact-name word.
+      const tokenScores = qTokens.map(qt => Math.max(...nTokens.map(nt => similarity(qt, nt))));
+      const avg = tokenScores.reduce((a,b) => a+b, 0) / tokenScores.length;
+      score = Math.max(score, avg * 88);
+
+      // Strong partial/word-prefix matches.
+      if (n.includes(q)) score = Math.max(score, 86);
+      if (q.includes(n)) score = Math.max(score, 82);
+      for (const qt of qTokens) {
+        if (qt.length >= 2 && nTokens.some(nt => nt.startsWith(qt))) score = Math.max(score, 78);
+      }
+
+      // Initials: "j k" can match "John Kennedy".
+      if (qTokens.length >= 2 && qTokens.length <= nTokens.length) {
+        const initials = nTokens.map(t => t[0]).join('');
+        if (qTokens.map(t => t[0]).join('') === initials.slice(0, qTokens.length)) score = Math.max(score, 84);
+      }
+      return Math.round(score);
+    }
+
     function fuzzyMatchContacts(spokenName) {
       const variants = expandQuery(spokenName);
+      const aliases = getVoiceAliases();
       const scores = [];
+
       for (const c of allContacts) {
-        const cName = (c.name || '').toLowerCase().trim();
-        const tokens = cName.split(/\s+/);
         let best = 0;
+
+        // Normal contact-name matching.
         for (const v of variants) {
-          if (cName === v) { best = 100; break; }
-          if (cName.startsWith(v) || tokens.some(t => t === v)) best = Math.max(best, 90);
-          else if (cName.includes(v) || tokens.some(t => t.startsWith(v))) best = Math.max(best, 70);
-          else if (v.length >= 3 && tokens.some(t => t.includes(v) || v.includes(t))) best = Math.max(best, 50);
+          best = Math.max(best, nameScore(v, c.name));
+          best = Math.max(best, pronunciationScore(v, c.name));
         }
-        if (best > 0) scores.push({ contact: c, score: best });
+
+        // Learned pronunciation aliases from this particular speaker/device.
+        const learned = aliases[c.id] || [];
+        for (const alias of learned) {
+          for (const v of variants) {
+            best = Math.max(best, nameScore(v, alias) + 8);
+            best = Math.max(best, pronunciationScore(v, alias) + 8);
+          }
+        }
+
+        if (best >= 52) scores.push({contact: c, score: Math.min(100, best)});
       }
+
       scores.sort((a, b) => b.score - a.score);
-      // Keep high-confidence matches
-      const top = scores.filter(s => s.score >= 50);
-      if (top.length === 0) return [];
-      const maxScore = top[0].score;
-      return top.filter(s => s.score >= maxScore - 20).map(s => s.contact);
+      if (!scores.length) return [];
+
+      const best = scores[0].score;
+      if (best < 64) return [];
+
+      // A stronger margin reduces the chance that an accent-related
+      // pronunciation accidentally selects the wrong person.
+      const margin = best >= 90 ? 10 : best >= 80 ? 8 : 5;
+      return scores
+        .filter(s => s.score >= best - margin)
+        .slice(0, 5)
+        .map(s => s.contact);
     }
+
 
     // ============================================================
     // VOICE RECOGNITION & COMMANDS
@@ -1447,8 +1592,33 @@
         setVoiceUI('listening');
       };
       recognition.onresult = (event) => {
-        const text = event.results[0][0].transcript.trim();
+        const result = event.results[0];
+        const alternatives = Array.from(result || [])
+          .map(a => (a.transcript || '').trim())
+          .filter(Boolean);
+        const text = alternatives[0] || '';
         setVoiceUI('processing', '"' + text + '"');
+
+        // Try every speech-recognition alternative. This is especially useful
+        // when Android hears a contact name slightly differently.
+        const callMatch = alternatives.find(t => /^(?:call|dial|phone|ring)\s+/i.test(t));
+        if (callMatch) {
+          const spokenName = callMatch.replace(/^(?:call|dial|phone|ring)\s+/i, '').replace(/[?.!]+$/, '').trim();
+          const candidates = [];
+          for (const alt of alternatives) {
+            const n = alt.replace(/^(?:call|dial|phone|ring)\s+/i, '').replace(/[?.!]+$/, '').trim();
+            if (!n) continue;
+            fuzzyMatchContacts(n).forEach(c => { if (!candidates.includes(c)) candidates.push(c); });
+          }
+          if (candidates.length) {
+            setVoiceUI(candidates.length === 1 ? 'found' : 'multiple', candidates.length === 1 ? candidates[0].name : candidates.length + ' matches');
+            if (candidates.length === 1) initiateCall(candidates[0]);
+            else showMatches(candidates);
+            return;
+          }
+          handleVoiceCommand(callMatch);
+          return;
+        }
         handleVoiceCommand(text);
       };
       recognition.onerror = (event) => {
@@ -1498,6 +1668,24 @@
         navigate('contacts');
         return;
       }
+      // Teach pronunciation: "teach John" / "learn John".
+      // The next recognized phrase is stored as a local pronunciation alias.
+      let m = lower.match(/^(?:teach|learn|remember)\s+(.+)$/);
+      if (m) {
+        const target = m[1].replace(/[?.!]+$/, '').trim();
+        const teachMatches = fuzzyMatchContacts(target);
+        if (teachMatches.length === 1) {
+          setVoiceUI('found', 'Say the name again for ' + teachMatches[0].name);
+          saveVoiceAlias(teachMatches[0], target);
+          toast('Pronunciation learned for ' + teachMatches[0].name);
+        } else if (teachMatches.length > 1) {
+          showMatches(teachMatches);
+        } else {
+          setVoiceUI('nomatch', 'I could not find ' + target);
+        }
+        return;
+      }
+
       // Call / Dial / Phone
       let m = lower.match(/^(?:call|dial|phone|ring)\s+(.+)$/);
       if (m) {
@@ -1541,6 +1729,9 @@
         return;
       }
       if (matches.length === 1) {
+        // Remember how this speaker's phone recognized the name. This makes
+        // repeated calls increasingly accurate for the same grandmother.
+        saveVoiceAlias(matches[0], name);
         setVoiceUI('found', matches[0].name);
         initiateCall(matches[0]);
         return;
@@ -2042,17 +2233,5 @@
     }
   })();
   </script>
-
-  <script>
-    // Offline PWA service worker registration.
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./service-worker.js').catch(err => {
-          console.warn('Offline service worker registration failed:', err);
-        });
-      });
-    }
-  </script>
-
 </body>
 </html>
