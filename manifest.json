@@ -1,7 +1,7 @@
 {
   "name": "Offline Voice Caller",
   "short_name": "Voice Caller",
-  "description": "Offline voice-controlled contact caller.",
+  "description": "Offline voice-controlled contact caller with local pronunciation learning.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
